@@ -232,9 +232,10 @@ static int vvp_mmap_locks(const struct lu_env *env,
         struct cl_lock_descr   *descr = &cti->cti_descr;
         ldlm_policy_data_t      policy;
         unsigned long           addr;
-        unsigned long           seg;
         ssize_t                 count;
 	int                     result = 0;
+	struct iov_iter i;
+	struct iovec iov;
         ENTRY;
 
         LASSERT(io->ci_type == CIT_READ || io->ci_type == CIT_WRITE);
@@ -242,18 +243,16 @@ static int vvp_mmap_locks(const struct lu_env *env,
         if (!cl_is_normalio(env, io))
                 RETURN(0);
 
-        if (vio->cui_iov == NULL) /* nfs or loop back device write */
+	if (vio->cui_iter == NULL) /* nfs or loop back device write */
                 RETURN(0);
 
         /* No MM (e.g. NFS)? No vmas too. */
         if (mm == NULL)
                 RETURN(0);
 
-        for (seg = 0; seg < vio->cui_nrsegs; seg++) {
-                const struct iovec *iv = &vio->cui_iov[seg];
-
-                addr = (unsigned long)iv->iov_base;
-                count = iv->iov_len;
+	iov_for_each(iov, i, *(vio->cui_iter)) {
+		addr = (unsigned long)iov.iov_base;
+		count = iov.iov_len;
                 if (count == 0)
                         continue;
 
@@ -547,9 +546,7 @@ static int vvp_io_read_start(const struct lu_env *env,
         switch (vio->cui_io_subtype) {
         case IO_NORMAL:
 		LASSERT(cio->cui_iocb->ki_pos == pos);
-		result = generic_file_aio_read(cio->cui_iocb,
-					       cio->cui_iov, cio->cui_nrsegs,
-					       cio->cui_iocb->ki_pos);
+		result = generic_file_read_iter(cio->cui_iocb, cio->cui_iter);
 		break;
         case IO_SPLICE:
                 result = generic_file_splice_read(file, &pos,
@@ -802,31 +799,11 @@ static int vvp_io_write_start(const struct lu_env *env,
 
 	CDEBUG(D_VFSTRACE, "write: [%lli, %lli)\n", pos, pos + (long long)cnt);
 
-	if (cio->cui_iov == NULL) {
-		/* from a temp io in ll_cl_init(). */
+	if (cio->cui_iter == NULL) /* from a temp io in ll_cl_init(). */
 		result = 0;
-	} else {
-		/*
-		 * When using the locked AIO function (generic_file_aio_write())
-		 * testing has shown the inode mutex to be a limiting factor
-		 * with multi-threaded single shared file performance. To get
-		 * around this, we now use the lockless version. To maintain
-		 * consistency, proper locking to protect against writes,
-		 * trucates, etc. is handled in the higher layers of lustre.
-		 */
-		result = __generic_file_aio_write(cio->cui_iocb,
-						  cio->cui_iov, cio->cui_nrsegs,
-						  &cio->cui_iocb->ki_pos);
-		if (result > 0 || result == -EIOCBQUEUED) {
-			ssize_t err;
+	else 
+		result = generic_file_write_iter(cio->cui_iocb, cio->cui_iter);
 
-			err = generic_write_sync(cio->cui_iocb->ki_filp,
-						 pos, result);
-			if (err < 0 && result > 0)
-				result = err;
-		}
-
-	}
 	if (result > 0) {
 		result = vvp_io_write_commit(env, io);
 		if (cio->u.write.cui_written > 0) {
@@ -1181,10 +1158,8 @@ int vvp_io_init(const struct lu_env *env, struct cl_object *obj,
                  *  results."  -- Single Unix Spec */
                 if (count == 0)
                         result = 1;
-                else {
+		else
                         cio->cui_tot_count = count;
-                        cio->cui_tot_nrsegs = 0;
-                }
 
 		/* for read/write, we store the jobid in the inode, and
 		 * it'll be fetched by osc when building RPC.
