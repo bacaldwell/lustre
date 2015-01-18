@@ -330,11 +330,11 @@ static int ll_readdir(struct file *filp, void *cookie, filldir_t filldir)
 	if (unlikely(op_data->op_mea1 != NULL)) {
 		/* This is only needed for striped dir to fill ..,
 		 * see lmv_read_entry */
-		if (filp->f_dentry->d_parent != NULL &&
-		    filp->f_dentry->d_parent->d_inode != NULL) {
+		if (filp->f_path.dentry->d_parent != NULL &&
+		    filp->f_path.dentry->d_parent->d_inode != NULL) {
 			__u64 ibits = MDS_INODELOCK_UPDATE;
 			struct inode *parent =
-				filp->f_dentry->d_parent->d_inode;
+				filp->f_path.dentry->d_parent->d_inode;
 
 			if (ll_have_md_lock(parent, &ibits, LCK_MINMODE))
 				op_data->op_fid3 = *ll_inode2fid(parent);
@@ -1193,7 +1193,7 @@ lmv_out_free:
                                 RETURN(-EFAULT);
                 }
 
-                if (inode->i_sb->s_root == file->f_dentry)
+                if (inode->i_sb->s_root == file->f_path.dentry)
                         set_default = 1;
 
                 /* in v1 and v3 cases lumv1 points to data */
