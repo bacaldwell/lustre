@@ -297,7 +297,7 @@ static int ll_iterate(struct file *filp, struct dir_context *ctx)
 static int ll_readdir(struct file *filp, void *cookie, filldir_t filldir)
 #endif
 {
-	struct inode		*inode	= filp->f_dentry->d_inode;
+	struct inode		*inode	= file_inode(filp);
 	struct ll_file_data	*lfd	= LUSTRE_FPRIVATE(filp);
 	struct ll_sb_info	*sbi	= ll_i2sbi(inode);
 	int			hash64	= sbi->ll_flags & LL_SBI_64BIT_HASH;
@@ -1041,7 +1041,7 @@ ll_getname(const char __user *filename)
 
 static long ll_dir_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
-        struct inode *inode = file->f_dentry->d_inode;
+        struct inode *inode = file_inode(file);
         struct ll_sb_info *sbi = ll_i2sbi(inode);
         struct obd_ioctl_data *data;
         int rc = 0;

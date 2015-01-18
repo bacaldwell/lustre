@@ -124,7 +124,7 @@ static const struct file_operations lprocfs_generic_fops = { };
 ssize_t
 lprocfs_fops_read(struct file *f, char __user *buf, size_t size, loff_t *ppos)
 {
-	struct inode *inode = f->f_dentry->d_inode;
+	struct inode *inode = file_inode(f);
 	struct proc_dir_entry *dp = PDE(inode);
 	char *page, *start = NULL;
 	int rc, eof = 1, count;
@@ -180,7 +180,7 @@ ssize_t
 lprocfs_fops_write(struct file *f, const char __user *buf, size_t size,
 		   loff_t *ppos)
 {
-	struct inode *inode = f->f_dentry->d_inode;
+	struct inode *inode = file_inode(f);
 	struct proc_dir_entry *dp = PDE(inode);
 	int rc;
 

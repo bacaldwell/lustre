@@ -104,7 +104,7 @@ ll_fault_io_init(struct vm_area_struct *vma, struct lu_env **env_ret,
 		 unsigned long *ra_flags)
 {
 	struct file	       *file = vma->vm_file;
-	struct inode	       *inode = file->f_dentry->d_inode;
+	struct inode	       *inode = file_inode(file);
 	struct cl_io	       *io;
 	struct cl_fault_io     *fio;
 	struct lu_env	       *env;
@@ -217,7 +217,7 @@ static int ll_page_mkwrite0(struct vm_area_struct *vma, struct page *vmpage,
 	cfs_restore_sigs(set);
 
         if (result == 0) {
-		struct inode *inode = vma->vm_file->f_dentry->d_inode;
+		struct inode *inode = file_inode(vma->vm_file);
 		struct ll_inode_info *lli = ll_i2info(inode);
 
                 lock_page(vmpage);
@@ -405,7 +405,7 @@ static int ll_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
 			CWARN("app(%s): the page %lu of file "DFID" is under"
 			      " heavy contention\n",
 			      current->comm, vmf->pgoff,
-			      PFID(ll_inode2fid(vma->vm_file->f_dentry->d_inode)));
+			      PFID(ll_inode2fid(file_inode(vma->vm_file))));
                         printed = true;
                 }
         } while (retry);
@@ -439,7 +439,7 @@ static int ll_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
  */
 static void ll_vm_open(struct vm_area_struct * vma)
 {
-	struct inode *inode    = vma->vm_file->f_dentry->d_inode;
+	struct inode *inode    = file_inode(vma->vm_file);
 	struct vvp_object *vob = cl_inode2vvp(inode);
 
 	ENTRY;
@@ -454,7 +454,7 @@ static void ll_vm_open(struct vm_area_struct * vma)
  */
 static void ll_vm_close(struct vm_area_struct *vma)
 {
-	struct inode      *inode = vma->vm_file->f_dentry->d_inode;
+	struct inode      *inode = file_inode(vma->vm_file);
 	struct vvp_object *vob   = cl_inode2vvp(inode);
 
 	ENTRY;
@@ -490,7 +490,7 @@ static const struct vm_operations_struct ll_file_vm_ops = {
 
 int ll_file_mmap(struct file *file, struct vm_area_struct * vma)
 {
-        struct inode *inode = file->f_dentry->d_inode;
+        struct inode *inode = file_inode(file);
         int rc;
         ENTRY;
 

@@ -1154,7 +1154,7 @@ void ll_cl_remove(struct file *file, const struct lu_env *env)
 
 int ll_readpage(struct file *file, struct page *vmpage)
 {
-	struct cl_object *clob = ll_i2info(file->f_dentry->d_inode)->lli_clob;
+	struct cl_object *clob = ll_i2info(file_inode(file))->lli_clob;
 	struct ll_cl_context *lcc;
 	const struct lu_env  *env;
 	struct cl_io   *io;
