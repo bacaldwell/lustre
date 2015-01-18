@@ -1148,11 +1148,8 @@ i_dentry_d_alias_hlist, [
 	#include <linux/list.h>
 ],[
 	struct inode inode;
-	struct dentry dentry;
 	struct hlist_head head;
-	struct hlist_node node;
 	inode.i_dentry = head;
-	dentry.d_alias = node;
 ],[
 	AC_DEFINE(HAVE_DENTRY_D_ALIAS_HLIST, 1,
 		[have i_dentry/d_alias uses hlist])
@@ -1263,11 +1260,9 @@ hlist_for_each_entry_3args, [
 	#include <linux/list.h>
 	#include <linux/fs.h>
 ],[
-	struct inode *inode;
-	struct dentry *dentry;
-	hlist_for_each_entry(dentry, &inode->i_dentry, d_alias) {
-		continue;
-	}
+        struct inode inode;
+        struct hlist_head head;
+        inode.i_dentry = head;
 ],[
 	AC_DEFINE(HAVE_HLIST_FOR_EACH_3ARG, 1,
 		[hlist_for_each_entry has 3 args])
