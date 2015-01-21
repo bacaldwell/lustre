@@ -26,6 +26,7 @@ AS_IF([test x$RHEL_KERNEL = xyes], [
 		esac
 	])
 ])
+AS_IF([test x$LINUXRELEASE = x3.18.0+], [LDISKFS_SERIES="3.20-linus.series"])
 AS_IF([test -z "$LDISKFS_SERIES"],
 	[AC_MSG_WARN([Unknown kernel version $LDISKFS_VERSIONRELEASE])])
 AC_MSG_RESULT([$LDISKFS_SERIES])
