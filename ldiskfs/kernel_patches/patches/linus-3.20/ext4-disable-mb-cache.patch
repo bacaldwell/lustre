@@ -55,7 +55,7 @@ Index: linux-3.10.0-123.9.3.el7.x86_64/fs/ext4/xattr.c
  
 -static void ext4_xattr_cache_insert(struct mb_cache *, struct buffer_head *);
 +static void ext4_xattr_cache_insert(struct super_block *,
-+				    struct mb_cache_entry *,
++				    struct mb_cache *,
 +				    struct buffer_head *);
  static struct buffer_head *ext4_xattr_cache_find(struct inode *,
  						 struct ext4_xattr_header *,
@@ -138,7 +138,7 @@ Index: linux-3.10.0-123.9.3.el7.x86_64/fs/ext4/xattr.c
  static void
 -ext4_xattr_cache_insert(struct mb_cache *ext4_mb_cache, struct buffer_head *bh)
 +ext4_xattr_cache_insert(struct super_block *sb,
-+			struct mb_cache_entry * ext4_mb_cache, struct buffer_head *bh)
++			 struct mb_cache *ext4_mb_cache, struct buffer_head *bh)
  {
  	__u32 hash = le32_to_cpu(BHDR(bh)->h_hash);
  	struct mb_cache_entry *ce;
