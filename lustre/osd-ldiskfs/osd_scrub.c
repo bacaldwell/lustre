@@ -1507,11 +1507,11 @@ noenv:
 typedef int (*scandir_t)(struct osd_thread_info *, struct osd_device *,
 			 struct dentry *, filldir_t filldir);
 
-static int osd_ios_varfid_fill(void *buf, const char *name, int namelen,
+static int osd_ios_varfid_fill(struct dir_context *ctx, const char *name, int namelen,
 			       loff_t offset, __u64 ino, unsigned d_type);
-static int osd_ios_lf_fill(void *buf, const char *name, int namelen,
+static int osd_ios_lf_fill(struct dir_context *ctx, const char *name, int namelen,
 			   loff_t offset, __u64 ino, unsigned d_type);
-static int osd_ios_dl_fill(void *buf, const char *name, int namelen,
+static int osd_ios_dl_fill(struct dir_context *ctx, const char *name, int namelen,
 			   loff_t offset, __u64 ino, unsigned d_type);
 
 static int
@@ -1783,10 +1783,11 @@ osd_ios_scan_one(struct osd_thread_info *info, struct osd_device *dev,
  * It scans the /lost+found, and for the OST-object (with filter_fid
  * or filter_fid_old), move them back to its proper /O/<seq>/d<x>.
  */
-static int osd_ios_lf_fill(void *buf, const char *name, int namelen,
+static int osd_ios_lf_fill(struct dir_context *ctx, const char *name, int namelen,
 			   loff_t offset, __u64 ino, unsigned d_type)
 {
-	struct osd_ios_filldir_buf *fill_buf = buf;
+	struct osd_ios_filldir_buf *fill_buf =
+		container_of(ctx, struct osd_ios_filldir_buf, ctx);
 	struct osd_thread_info     *info     = fill_buf->oifb_info;
 	struct osd_device	   *dev      = fill_buf->oifb_dev;
 	struct lu_fid		   *fid      = &info->oti_fid;
@@ -1851,10 +1852,11 @@ put:
 	return 0;
 }
 
-static int osd_ios_varfid_fill(void *buf, const char *name, int namelen,
+static int osd_ios_varfid_fill(struct dir_context *ctx, const char *name, int namelen,
 			       loff_t offset, __u64 ino, unsigned d_type)
 {
-	struct osd_ios_filldir_buf *fill_buf = buf;
+	struct osd_ios_filldir_buf *fill_buf =
+		container_of(ctx, struct osd_ios_filldir_buf, ctx);
 	struct osd_device	   *dev      = fill_buf->oifb_dev;
 	struct dentry		   *child;
 	int			    rc;
@@ -1878,10 +1880,11 @@ static int osd_ios_varfid_fill(void *buf, const char *name, int namelen,
 	RETURN(rc);
 }
 
-static int osd_ios_dl_fill(void *buf, const char *name, int namelen,
+static int osd_ios_dl_fill(struct dir_context *ctx, const char *name, int namelen,
 			   loff_t offset, __u64 ino, unsigned d_type)
 {
-	struct osd_ios_filldir_buf *fill_buf = buf;
+	struct osd_ios_filldir_buf *fill_buf =
+		container_of(ctx, struct osd_ios_filldir_buf, ctx);
 	struct osd_device	   *dev      = fill_buf->oifb_dev;
 	const struct osd_lf_map    *map;
 	struct dentry		   *child;
@@ -1914,10 +1917,11 @@ static int osd_ios_dl_fill(void *buf, const char *name, int namelen,
 	RETURN(rc);
 }
 
-static int osd_ios_root_fill(void *buf, const char *name, int namelen,
+static int osd_ios_root_fill(struct dir_context *ctx, const char *name, int namelen,
 			     loff_t offset, __u64 ino, unsigned d_type)
 {
-	struct osd_ios_filldir_buf *fill_buf = buf;
+	struct osd_ios_filldir_buf *fill_buf =
+		container_of(ctx, struct osd_ios_filldir_buf, ctx);
 	struct osd_device	   *dev      = fill_buf->oifb_dev;
 	const struct osd_lf_map    *map;
 	struct dentry		   *child;

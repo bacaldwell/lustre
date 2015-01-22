@@ -5008,17 +5008,20 @@ struct osd_filldir_cbs {
  * iterator's in-memory data structure with required
  * information i.e. name, namelen, rec_size etc.
  *
- * \param buf in which information to be filled in.
+ * \param ctx linked to buf in which information to be filled in.
  * \param name name of the file in given dir
  *
  * \retval 0 on success
  * \retval 1 on buffer full
  */
-static int osd_ldiskfs_filldir(void *buf, const char *name, int namelen,
+
+static int osd_ldiskfs_filldir(struct dir_context *ctx, const char *name, int namelen,
                                loff_t offset, __u64 ino,
                                unsigned d_type)
 {
-	struct osd_it_ea	*it   = ((struct osd_filldir_cbs *)buf)->it;
+	struct osd_filldir_cbs  *buf  =
+		container_of(ctx, struct osd_filldir_cbs, ctx);
+	struct osd_it_ea	*it   = buf->it;
 	struct osd_object	*obj  = it->oie_obj;
         struct osd_it_ea_dirent *ent  = it->oie_dirent;
         struct lu_fid           *fid  = &ent->oied_fid;
