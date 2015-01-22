@@ -175,20 +175,21 @@ iam_load_idle_blocks(struct iam_container *c, iam_ptr_t blk)
 	struct inode *inode = c->ic_object;
 	struct iam_idle_head *head;
 	struct buffer_head *bh;
-	int err;
 
 	LASSERT(mutex_is_locked(&c->ic_idle_mutex));
 
 	if (blk == 0)
 		return NULL;
 
-	bh = ldiskfs_bread(NULL, inode, blk, 0, &err);
-	if (bh == NULL) {
-		CERROR("%.16s: cannot load idle blocks, blk = %u, err = %d\n",
-		       LDISKFS_SB(inode->i_sb)->s_es->s_volume_name, blk, err);
+	bh = ldiskfs_bread(NULL, inode, blk, 0);
+        if (IS_ERR(bh)) {
+		CERROR("%.16s: cannot load idle blocks, blk = %u\n",
+		       LDISKFS_SB(inode->i_sb)->s_es->s_volume_name, blk);
 		c->ic_idle_failed = 1;
-		return ERR_PTR(err);
+		return ERR_PTR(-EIO);
 	}
+	if (bh == NULL)
+		return bh;
 
 	head = (struct iam_idle_head *)(bh->b_data);
 	if (le16_to_cpu(head->iih_magic) != IAM_IDLE_HEADER_MAGIC) {
@@ -378,7 +379,9 @@ int iam_node_read(struct iam_container *c, iam_ptr_t ptr,
                 return 0;
         }
 
-        *bh = ldiskfs_bread(h, c->ic_object, (int)ptr, 0, &result);
+        *bh = ldiskfs_bread(h, c->ic_object, (int)ptr, 0);
+	if (IS_ERR(*bh))
+		return PTR_ERR(*bh);
         if (*bh == NULL)
                 result = -EIO;
         return result;
@@ -1691,7 +1694,9 @@ iam_new_node(handle_t *h, struct iam_container *c, iam_ptr_t *b, int *e)
 			goto fail;
 
 		mutex_unlock(&c->ic_idle_mutex);
-		bh = ldiskfs_bread(NULL, inode, *b, 0, e);
+		bh = ldiskfs_bread(NULL, inode, *b, 0);
+		if (IS_ERR(bh))
+			goto fail;
 		if (bh == NULL)
 			return NULL;
 		goto got;
