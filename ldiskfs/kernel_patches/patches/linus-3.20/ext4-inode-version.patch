@@ -42,14 +42,6 @@ index 5653fa4..91fef46 100644
  		}
  	}
  
-@@ -4191,6 +4192,7 @@ static int ext4_do_update_inode(handle_t *handle,
- 		raw_inode->i_gid_low = cpu_to_le16(fs_high2lowgid(i_gid));
- 		raw_inode->i_uid_high = 0;
- 		raw_inode->i_gid_high = 0;
-+		    (__u64)(le32_to_cpu(raw_inode->i_version_hi)) << 32;
- 	}
- 	raw_inode->i_links_count = cpu_to_le16(inode->i_nlink);
- 
 @@ -4239,11 +4241,11 @@ static int ext4_do_update_inode(handle_t *handle,
  	}
  
