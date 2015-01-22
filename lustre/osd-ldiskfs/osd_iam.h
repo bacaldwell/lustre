@@ -1049,7 +1049,7 @@ static inline void iam_lock_bh(struct buffer_head volatile *bh)
 static inline void iam_unlock_bh(struct buffer_head *bh)
 {
 #ifdef CONFIG_SMP
-        smp_mb__before_clear_bit();
+        __smp_mb__before_atomic();
         clear_bit(BH_DXLock, &bh->b_state);
 #endif
 }
