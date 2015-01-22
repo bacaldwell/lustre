@@ -313,7 +313,7 @@ Index: linux-3.10.0-123.9.3.el7.x86_64/fs/ext4/xattr.c
 +			brelse(bh);
 +		csize = (bufsize - wsize) > blocksize ? blocksize :
 +								bufsize - wsize;
-+		bh = ext4_getblk(handle, ea_inode, block, 0, &ret);
++		bh = ext4_getblk(handle, ea_inode, block, 0);
 +		if (!bh)
 +			goto out;
 +		ret = ext4_journal_get_write_access(handle, bh);

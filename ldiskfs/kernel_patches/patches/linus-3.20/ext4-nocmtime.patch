@@ -8,7 +8,7 @@ Index: linux-3.10.0-123.9.3.el7.x86_64/fs/ext4/xattr.c
  		ext4_xattr_update_super_block(handle, inode->i_sb);
 -		inode->i_ctime = ext4_current_time(inode);
 +		if (!IS_NOCMTIME(inode))
-+ 			inode->i_ctime = ext4_current_time(inode);
++			inode->i_ctime = ext4_current_time(inode);
  		if (!value)
  			ext4_clear_inode_state(inode, EXT4_STATE_NO_EXPAND);
  		error = ext4_mark_iloc_dirty(handle, inode, &is.iloc);

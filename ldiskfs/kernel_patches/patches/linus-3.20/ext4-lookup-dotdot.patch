@@ -20,10 +20,10 @@ Index: linux-3.10.9-200.fc17.x86_64/fs/ext4/namei.c
 +			/* there is no alias, we need to make current dentry:
 +			 *  a) inaccessible for __d_lookup()
 +			 *  b) inaccessible for iopen */
-+			J_ASSERT(hlist_unhashed(&dentry->du.d_alias));
++			J_ASSERT(hlist_unhashed(&dentry->d_u.d_alias));
 +			dentry->d_flags |= DCACHE_NFSFS_RENAMED;
 +			/* this is d_instantiate() ... */
-+			hlist_add_head(&dentry->du_.d_alias, &inode->i_dentry);
++			hlist_add_head(&dentry->d_u.d_alias, &inode->i_dentry);
 +			dentry->d_inode = inode;
 +			spin_unlock(&dentry->d_lock);
 +		}

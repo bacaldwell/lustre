@@ -49,12 +49,13 @@ Index: linux-3.10.0-123.9.3.el7.x86_64/fs/ext4/xattr.c
 ===================================================================
 --- linux-3.10.0-123.9.3.el7.x86_64.orig/fs/ext4/xattr.c
 +++ linux-3.10.0-123.9.3.el7.x86_64/fs/ext4/xattr.c
-@@ -81,7 +81,8 @@
+@@ -81,7 +81,9 @@
  # define ea_bdebug(bh, fmt, ...)	no_printk(fmt, ##__VA_ARGS__)
  #endif
  
 -static void ext4_xattr_cache_insert(struct mb_cache *, struct buffer_head *);
 +static void ext4_xattr_cache_insert(struct super_block *,
++				    struct mb_cache_entry *,
 +				    struct buffer_head *);
  static struct buffer_head *ext4_xattr_cache_find(struct inode *,
  						 struct ext4_xattr_header *,
@@ -64,7 +65,7 @@ Index: linux-3.10.0-123.9.3.el7.x86_64/fs/ext4/xattr.c
  		goto cleanup;
  	}
 -	ext4_xattr_cache_insert(ext4_mb_cache, bh);
-+	ext4_xattr_cache_insert(inode->i_sb, bh);
++	ext4_xattr_cache_insert(inode->i_sb, ext4_mb_cache, bh);
  	entry = BFIRST(bh);
  	error = ext4_xattr_find_entry(&entry, name_index, name, bh->b_size, 1,
  				      inode);
@@ -73,7 +74,7 @@ Index: linux-3.10.0-123.9.3.el7.x86_64/fs/ext4/xattr.c
  		goto cleanup;
  	}
 -	ext4_xattr_cache_insert(ext4_mb_cache, bh);
-+	ext4_xattr_cache_insert(inode->i_sb, bh);
++	ext4_xattr_cache_insert(inode->i_sb, ext4_mb_cache, bh);
  	error = ext4_xattr_list_entries(dentry, BFIRST(bh), buffer, buffer_size);
  
  cleanup:
@@ -83,7 +84,7 @@ Index: linux-3.10.0-123.9.3.el7.x86_64/fs/ext4/xattr.c
  
 -	ce = mb_cache_entry_get(ext4_mb_cache, bh->b_bdev, bh->b_blocknr);
 +	if (!test_opt(inode->i_sb, NO_MBCACHE))
-+		ce = mb_cache_entry_get(ext4_xattr_cache, bh->b_bdev,
++		ce = mb_cache_entry_get(ext4_mb_cache, bh->b_bdev,
 +					bh->b_blocknr);
  	BUFFER_TRACE(bh, "get_write_access");
  	error = ext4_journal_get_write_access(handle, bh);
@@ -95,19 +96,20 @@ Index: linux-3.10.0-123.9.3.el7.x86_64/fs/ext4/xattr.c
 -		ce = mb_cache_entry_get(ext4_mb_cache, bs->bh->b_bdev,
 -					bs->bh->b_blocknr);
 +		if (!test_opt(inode->i_sb, NO_MBCACHE))
-+			ce = mb_cache_entry_get(ext4_xattr_cache,
++			ce = mb_cache_entry_get(ext4_mb_cache,
 +						bs->bh->b_bdev,
 +						bs->bh->b_blocknr);
  		BUFFER_TRACE(bs->bh, "get_write_access");
  		error = ext4_journal_get_write_access(handle, bs->bh);
  		if (error)
-@@ -1055,8 +1060,7 @@ ext4_xattr_block_set(handle_t *handle, s
+@@ -1055,8 +1060,8 @@ ext4_xattr_block_set(handle_t *handle, s
  				if (!IS_LAST_ENTRY(s->first))
  					ext4_xattr_rehash(header(s->base),
  							  s->here);
 -				ext4_xattr_cache_insert(ext4_mb_cache,
 -					bs->bh);
-+				ext4_xattr_cache_insert(sb, bs->bh);
++				ext4_xattr_cache_insert(sb,
++					ext4_mb_cache,bs->bh);
  			}
  			unlock_buffer(bs->bh);
  			if (error == -EIO)
@@ -126,16 +128,17 @@ Index: linux-3.10.0-123.9.3.el7.x86_64/fs/ext4/xattr.c
  			set_buffer_uptodate(new_bh);
  			unlock_buffer(new_bh);
 -			ext4_xattr_cache_insert(ext4_mb_cache, new_bh);
-+			ext4_xattr_cache_insert(sb, new_bh);
++			ext4_xattr_cache_insert(sb, ext4_mb_cache, new_bh);
  			error = ext4_handle_dirty_xattr_block(handle,
  							      inode, new_bh);
  			if (error)
-@@ -1839,12 +1845,15 @@ ext4_xattr_put_super(struct super_block
+@@ -1839,12 +1845,16 @@ ext4_xattr_put_super(struct super_block
   * Returns 0, or a negative error number on failure.
   */
  static void
 -ext4_xattr_cache_insert(struct mb_cache *ext4_mb_cache, struct buffer_head *bh)
-+ext4_xattr_cache_insert(struct super_block *sb, struct buffer_head *bh)
++ext4_xattr_cache_insert(struct super_block *sb,
++			struct mb_cache_entry * ext4_mb_cache, struct buffer_head *bh)
  {
  	__u32 hash = le32_to_cpu(BHDR(bh)->h_hash);
  	struct mb_cache_entry *ce;
